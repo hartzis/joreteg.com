@@ -1,10 +1,7 @@
 // make it possible to require es6 modules
-require('babel/register')
 var webpackConfig = require('hjs-webpack')
-var React = require('react')
 var data = require('./data.json')
-var App = require('./src/app')
-var RSS = require('rss')
+var fs = require('fs')
 
 function renderScripts (scripts) {
   scripts || (scripts = [])
@@ -21,18 +18,21 @@ var links = [
   '<link rel="shortcut icon" href="/avatar.png">'
 ].join('')
 
-module.exports = webpackConfig({
+var loaderConfig = webpackConfig({
   in: 'src/root.js',
   out: 'public',
   clearBeforeBuild: '!(images|avatar.png)',
   serveCustomHtmlInDev: false,
-  hostname: 'odin.local',
   html: function (context) {
+    require('babel-core/register')
+    var ReactDOMServer = require('react-dom/server')
+    var React = require('react')
+    var App = require('./src/app').default
     function render (el, title, scripts) {
-      var contentHtml = React.renderToStaticMarkup(el)
+      var contentHtml = ReactDOMServer.renderToStaticMarkup(el)
       scripts = renderScripts(scripts)
       title || (title = 'Henrik Joreteg\'s Blog')
-      return '<!doctype html><html lang="en"><head><meta charset="utf-8"/><title>' + title + '</title><meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/><link href="/' + context.css + '" rel="stylesheet"/>' + links + '</head><body>' + contentHtml + scripts + analytics + '</body></html>'
+      return '<!doctype html><html lang="en"><head><meta charset="utf-8"/><title>' + title + '</title><meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/><link href="/' + context.css + '" rel="stylesheet"/>' + links + '</head><body><div id="root">' + contentHtml + '</div>' + scripts + analytics + '</body></html>'
     }
 
     var result = {
@@ -41,35 +41,17 @@ module.exports = webpackConfig({
       'blog/all.html': render(React.createElement(App, {url: '/blog/all', posts: data.posts}), 'Henrik\'s Blog, all posts')
     }
 
-    var feed = new RSS({
-      title: 'Henrik Joreteg\'s Blog',
-      description: 'Mobile web consultant, developer, and speaker',
-      generator: 'node.js, sucka!',
-      feed_url: 'https://joreteg.com/rss',
-      site_url: 'https://joreteg.com',
-      image_url: 'https://joreteg.com/avatar.png',
-      webMaster: 'henrik@joreteg.com (Henrik Joreteg)',
-      copyright: 'Henrik Joreteg',
-      language: 'en',
-      pubDate: new Date()
-    })
-
     data.posts.forEach(function (post, index) {
       result[post.outputFile] = render(React.createElement(App, {url: post.url, posts: data.posts}), post.title, post.scripts)
-      // only add last 10 items to RSS
-      if (index < 10) {
-        feed.item({
-          title: post.title,
-          description: post.html,
-          url: 'https://joreteg.com' + post.url,
-          author: post.author || 'Henrik Joreteg',
-          date: new Date(post.date)
-        })
-      }
     })
-
-    result['rss.xml'] = feed.xml()
-
     return result
   }
 })
+
+// Having hmre present in the .babelrc will break with the `babel-core/register` above
+// so wait until that is done and then add it here via the loader query
+// const babelrc = JSON.parse(fs.readFileSync('./.babelrc'))
+// babelrc.env = {development: {presets: ['react-hmre']}}
+// config.module.loaders[0].query = babelrc
+
+module.exports = loaderConfig;

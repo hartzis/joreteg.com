@@ -10,7 +10,7 @@ export default class Blog extends Component {
         {posts.map(post => {
           let date = moment(post.date)
           return (
-            <li>
+            <li key={date}>
               <time dateTime={date.format('YYYY-MM-DD HH:mm')}>{date.format('D MMM YYYY').toUpperCase()}</time>
               <a href={post.url}>{post.title}</a>
             </li>

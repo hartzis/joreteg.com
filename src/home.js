@@ -10,7 +10,7 @@ export default class Home extends Component {
         {posts.map(post => {
           let date = moment(post.date)
           return (
-            <article>
+            <article key={date}>
               <time dateTime={date.format('YYYY-MM-DD HH:mm')}>{date.format('D MMM YYYY')}</time>
               <h1><a href={post.url}>{post.title}</a></h1>
               <div className='preview' dangerouslySetInnerHTML={{__html: post.preview}}></div>
