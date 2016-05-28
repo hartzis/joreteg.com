@@ -10,4 +10,4 @@ if (typeof window !== 'undefined') {
   url = window.location.pathname
 }
 
-render(React.createElement(App, { posts: data.posts }), document.getElementById('root'));
+render(React.createElement(App, { posts: data.posts, url }), document.getElementById('root'));
